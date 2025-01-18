@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
+    kotlin("jvm") version "2.1.0"
 }
 
 repositories {
@@ -7,5 +7,5 @@ repositories {
 }
 
 dependencies {
-    implementation(libs.kotlin.stdlib)
+    implementation(kotlin("stdlib"))
 }
