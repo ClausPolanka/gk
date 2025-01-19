@@ -3,7 +3,7 @@ import java.util.*
 
 fun main(args: Array<String>) {
     val stopWords = readFileOrEmpty("stopwords.txt")
-    val userInput = if (args.isEmpty()) {
+    val userInput = if (args.isEmpty().or(args[0] == "-index")) {
         tryPrintToSystemOut("Enter text: ", out = ::print)
         tryReadFromSystemIn().orEmpty().ifBlank {
             tryPrintToSystemOut("No input provided. Exiting.")
@@ -20,9 +20,16 @@ fun main(args: Array<String>) {
     }
     val averageWordLength = words.map { it.length }.average()
     val formattedAverageWordLength = String.format(Locale.US, "%.2f", averageWordLength)
-    tryPrintToSystemOut(
-        "Number of words: ${words.size}, unique: ${words.distinct().size}; average word length: $formattedAverageWordLength characters"
-    )
+    val output = "Number of words: ${words.size}, " +
+        "unique: ${words.distinct().size}; " +
+        "average word length: $formattedAverageWordLength characters"
+    tryPrintToSystemOut(output)
+    if (args.contains("-index")) {
+        tryPrintToSystemOut("Index:")
+        words.toSortedSet { o1, o2 -> o1.compareTo(o2, ignoreCase = true) }.forEach {
+            tryPrintToSystemOut(it)
+        }
+    }
 }
 
 private fun readFileOrEmpty(userInputFile: String): List<String> =
