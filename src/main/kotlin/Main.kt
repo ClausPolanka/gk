@@ -3,7 +3,7 @@ import java.util.*
 
 fun main(args: Array<String>) {
     val stopWords = readFileOrEmpty("stopwords.txt")
-    val userInput = if (args.isEmpty().or(args[0] == "-index")) {
+    val userInput = if (args.isEmpty() || args[0] == "-index") {
         tryPrintToSystemOut("Enter text: ", out = ::print)
         tryReadFromSystemIn().orEmpty().ifBlank {
             tryPrintToSystemOut("No input provided. Exiting.")
@@ -14,17 +14,22 @@ fun main(args: Array<String>) {
     }
     val wordCandidates = userInput.split(delimiters = arrayOf(" ", "."))
     val words = wordCandidates.filter {
-        it.isNotBlank()
-            .and(it.all { char -> char.isLetter().or(char == '-') })
-            .and(it !in stopWords)
+        it.isNotBlank().and(it.all { char -> char.isLetter().or(char == '-') }).and(it !in stopWords)
     }
     val averageWordLength = words.map { it.length }.average()
     val formattedAverageWordLength = String.format(Locale.US, "%.2f", averageWordLength)
-    val output = "Number of words: ${words.size}, " +
-        "unique: ${words.distinct().size}; " +
-        "average word length: $formattedAverageWordLength characters"
+    val output =
+        "Number of words: ${words.size}, " + "unique: ${words.distinct().size}; " + "average word length: $formattedAverageWordLength characters"
     tryPrintToSystemOut(output)
-    if (args.contains("-index")) {
+    if (args.contains("-index").and(args.any { it.contains("-dict") })) {
+        val dictionary = readFileOrEmpty(args.filter { it.contains("-dict") }[0].split("=")[1])
+        val unknown = words.filter { it !in dictionary }
+        val indexHeader = if (unknown.isNotEmpty()) "Index (unknown: ${unknown.size}):" else "Index:"
+        tryPrintToSystemOut(indexHeader)
+        words.toSortedSet { o1, o2 -> o1.compareTo(o2, ignoreCase = true) }.forEach {
+            tryPrintToSystemOut(if (it in dictionary) it else "$it*")
+        }
+    } else if (args.contains("-index")) {
         tryPrintToSystemOut("Index:")
         words.toSortedSet { o1, o2 -> o1.compareTo(o2, ignoreCase = true) }.forEach {
             tryPrintToSystemOut(it)
@@ -33,15 +38,11 @@ fun main(args: Array<String>) {
 }
 
 private fun readFileOrEmpty(userInputFile: String): List<String> =
-    File(userInputFile)
-        .takeIf { it.exists().and(it.isFile).and(it.canRead()) }
-        ?.readLines()
-        .orEmpty()
-        .also {
-            if (it.isEmpty()) {
-                tryPrintToSystemOut("The file '$userInputFile' was not found and will be treated as empty.")
-            }
+    File(userInputFile).takeIf { it.exists().and(it.isFile).and(it.canRead()) }?.readLines().orEmpty().also {
+        if (it.isEmpty()) {
+            tryPrintToSystemOut("The file '$userInputFile' was not found and will be treated as empty.")
         }
+    }
 
 fun tryPrintToSystemOut(message: String, out: (message: Any?) -> Unit = ::println) = try {
     out(message)
